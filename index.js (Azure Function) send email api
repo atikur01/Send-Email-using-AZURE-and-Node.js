@@ -1,0 +1,45 @@
+const { EmailClient } = require('@azure/communication-email');
+
+// This code retrieves your connection string from an environment variable.
+const connectionString = "endpoint=https://communication01.asiapacific.communication.azure.com/;accesskey=GXNgKKNAvEVzObzyQf17X4OTwm4PdI+UZb5jHuQOskPDy/F4UesyVu+ISXFzwiyqc1iLw4qN3JtFGcKVs5VpiQ==";
+const client = new EmailClient(connectionString);
+
+module.exports = async function (context, req) {
+    try {
+        // Validate the request payload
+        if (!req.body.subject || !req.body.message || !req.body.to) {
+            throw new Error("Invalid request payload. Subject, message, and recipient are required.");
+        }
+
+        const emailMessage = {
+            senderAddress: "DoNotReply@fb3c20b3-0656-44c8-9ee0-04bb849af6c4.azurecomm.net",
+            content: {
+                subject: req.body.subject,
+                plainText: req.body.message,
+            },
+            recipients: {
+                to: [{ address: req.body.to }],
+            },
+        };
+
+        // Log the constructed emailMessage for debugging
+        context.log("Constructed Email Message:", emailMessage);
+
+        const poller = await client.beginSend(emailMessage);
+        //const result = await poller.pollUntilDone();
+        const result = "done";
+        context.log("Email sent successfully:", result);
+       
+
+        context.res = {
+            status: 200,
+            body: { message: 'Email sent successfully', result },
+        };
+    } catch (error) {
+        context.log.error("Error sending email:", error.message);
+        context.res = {
+            status: 500,
+            body: { error: 'Internal Server Error', message: error.message },
+        };
+    }
+};
